@@ -9,7 +9,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "aoc2024",
 	Short: "",
-	Long: ``,
+	Long:  ``,
 }
 
 func Execute() {
