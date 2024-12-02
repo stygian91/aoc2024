@@ -1,17 +1,10 @@
 package q01
 
 import (
-	_ "embed"
 	"fmt"
 	"strconv"
 	"strings"
 )
-
-// //go:embed inputs/demo.txt
-// var dataDemo string
-//
-// //go:embed inputs/main.txt
-// var dataMain string
 
 func splitLine(line string) (int, int, error) {
 	firstSpace := strings.Index(line, " ")
