@@ -11,7 +11,7 @@ var q02partArg *int
 var q02Cmd = &cobra.Command{
 	Use:   "q02",
 	Short: "",
-	Long: ``,
+	Long:  ``,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if *q02partArg == 1 {
