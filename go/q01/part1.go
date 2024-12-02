@@ -3,21 +3,14 @@ package q01
 import (
 	"aoc2024/common/data"
 	"container/heap"
-	_ "embed"
 	"fmt"
 	"strings"
 )
 
-//go:embed inputs/demo.txt
-var part1Demo string
-
-//go:embed inputs/main.txt
-var part1Main string
-
 func Part1() {
-	lines := strings.Split(part1Main, "\n")
-	lHeap := data.New()
-	rHeap := data.New()
+	lines := strings.Split(dataMain, "\n")
+	lHeap := data.NewHeap()
+	rHeap := data.NewHeap()
 
 	for i, line := range lines {
 		if len(line) == 0 {

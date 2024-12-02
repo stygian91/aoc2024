@@ -22,7 +22,7 @@ func (h *IntHeap) Pop() any {
 	return x
 }
 
-func New() *IntHeap {
+func NewHeap() *IntHeap {
 	h := &IntHeap{}
 	heap.Init(h)
 	return h
