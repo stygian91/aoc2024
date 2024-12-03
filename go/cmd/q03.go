@@ -9,7 +9,7 @@ import (
 var q03Cmd = &cobra.Command{
 	Use:   "q03",
 	Short: "",
-	Long: ``,
+	Long:  ``,
 }
 
 func init() {
