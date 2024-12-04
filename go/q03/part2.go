@@ -39,7 +39,7 @@ func allIndexes(s, sub string) []int {
 		}
 
 		res = append(res, offset+idx)
-		offset += idx+len(sub)
+		offset += idx + len(sub)
 		rem = rem[idx+len(sub):]
 	}
 

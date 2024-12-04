@@ -7,23 +7,40 @@ import (
 
 type Grid struct {
 	Cells [][]rune
+	W, H  int
 }
 
-func (this Grid) IsInside(_ data.Vec2i) bool {
-	// TODO:
-	return false
+func (this Grid) IsInside(pos data.Vec2i) bool {
+	return pos.X >= 0 && pos.X < this.W && pos.Y >= 0 && pos.Y < this.H
 }
 
 func (this Grid) At(pos data.Vec2i) rune {
 	return this.Cells[pos.Y][pos.X]
 }
 
+func (this Grid) Walk(start, dir data.Vec2i, count int) []rune {
+	res := []rune{}
+	next := start
+
+	for i := 0; i < count; i++ {
+		if !this.IsInside(next) {
+			break
+		}
+
+		res = append(res, this.At(next))
+		next = next.Add(dir)
+	}
+
+	return res
+}
+
 func parseGrid(str string) Grid {
 	grid := Grid{}
 	cells := [][]rune{}
 	row := []rune{}
+	s := strings.TrimSpace(str)
 
-	for _, r := range strings.TrimSpace(str) {
+	for i, r := range s {
 		if r == '\r' {
 			continue
 		}
@@ -35,25 +52,14 @@ func parseGrid(str string) Grid {
 		}
 
 		row = append(row, r)
+
+		if i == len(s)-1 {
+			cells = append(cells, row)
+		}
 	}
 
 	grid.Cells = cells
+	grid.H = len(cells)
+	grid.W = len(cells[0])
 	return grid
 }
-
-func walk(grid Grid, start, dir data.Vec2i) []rune {
-	res := []rune{}
-	next := start.Add(dir)
-
-	for {
-		if !grid.IsInside(next) {
-			break
-		}
-
-		res = append(res, grid.At(next))
-		next = next.Add(dir)
-	}
-
-	return res
-}
-
