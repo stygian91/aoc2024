@@ -29,10 +29,7 @@ func Part1() {
 		sum += getMiddle(update)
 	}
 
-	fmt.Printf("Part 1 answer: %d\n", sum)
-}
+	fmt.Println(orderedUpdates)
 
-func getMiddle(update []int) int {
-	idx := len(update) / 2
-	return update[idx]
+	fmt.Printf("Part 1 answer: %d\n", sum)
 }

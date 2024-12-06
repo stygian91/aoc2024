@@ -1,6 +1,7 @@
 package q05
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -72,7 +73,7 @@ func parseUpdate(str string) []int {
 
 func isOrdered(update []int, rules []Rule) bool {
 	for _, rule := range rules {
-		isUpheld, _, _ := checkRule(update, rule)
+		isUpheld := checkRule(update, rule)
 		if !isUpheld {
 			return false
 		}
@@ -81,18 +82,7 @@ func isOrdered(update []int, rules []Rule) bool {
 	return true
 }
 
-func firstBrokenRule(update []int, rules []Rule) (int, int, int) {
-	for i, rule := range rules {
-		isUpheld, lowPos, highPos := checkRule(update, rule)
-		if !isUpheld {
-			return i, lowPos, highPos
-		}
-	}
-
-	return -1, 0, 0
-}
-
-func checkRule(update []int, rule Rule) (bool, int, int) {
+func checkRule(update []int, rule Rule) bool {
 	foundPos := map[int]int{}
 
 	for i, num := range update {
@@ -108,9 +98,20 @@ func checkRule(update []int, rule Rule) (bool, int, int) {
 		}
 
 		if lowPos > highPos {
-			return false, lowPos, highPos
+			return false
 		}
 	}
 
-	return true, 0, 0
+	return true
+}
+
+func getMiddle(update []int) int {
+	idx := len(update) / 2
+	return update[idx]
+}
+
+func ruleIndex(rules []Rule, a, b int) int {
+	return slices.IndexFunc(rules, func(rule Rule) bool {
+		return (rule.Low == a && rule.High == b) || (rule.Low == b && rule.High == a)
+	})
 }
