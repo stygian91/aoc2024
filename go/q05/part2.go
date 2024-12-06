@@ -31,9 +31,7 @@ func orderUpdate(update []int, rules []Rule) []int {
 	res := update[:]
 
 	for {
-		if isOrdered(res, rules) {
-			break
-		}
+		changed := false
 
 		for i := 0; i < len(update)-1; i++ {
 			a, b := res[i], res[i+1]
@@ -47,7 +45,12 @@ func orderUpdate(update []int, rules []Rule) []int {
 				continue
 			}
 
+			changed = true
 			res[i], res[i+1] = res[i+1], res[i]
+		}
+
+		if !changed {
+			break
 		}
 	}
 
