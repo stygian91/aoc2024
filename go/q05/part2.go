@@ -3,6 +3,7 @@ package q05
 import (
 	"aoc2024/inputs"
 	"fmt"
+	"slices"
 )
 
 func Part2() {
@@ -30,29 +31,20 @@ func Part2() {
 func orderUpdate(update []int, rules []Rule) []int {
 	res := update[:]
 
-	for {
-		changed := false
-
-		for i := 0; i < len(update)-1; i++ {
-			a, b := res[i], res[i+1]
-			rIdx := ruleIndex(rules, a, b)
-			if rIdx == -1 {
-				continue
-			}
-
-			rule := rules[rIdx]
-			if rule.Low == a {
-				continue
-			}
-
-			changed = true
-			res[i], res[i+1] = res[i+1], res[i]
+	slices.SortFunc(res, func(a, b int) int {
+		rIdx := ruleIndex(rules, a, b)
+		if rIdx == -1 {
+			return 0
 		}
 
-		if !changed {
-			break
+		rule := rules[rIdx]
+
+		if rule.Low == a {
+			return 0
 		}
-	}
+
+		return -1
+	})
 
 	return res
 }
