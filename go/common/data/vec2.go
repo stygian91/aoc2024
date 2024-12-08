@@ -14,3 +14,10 @@ func (this Vec2i) Add(other Vec2i) Vec2i {
 		Y: this.Y + other.Y,
 	}
 }
+
+func (this Vec2i) Sub(other Vec2i) Vec2i {
+	return Vec2i{
+		X: this.X - other.X,
+		Y: this.Y - other.Y,
+	}
+}
