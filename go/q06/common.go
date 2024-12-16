@@ -4,6 +4,8 @@ import (
 	d "aoc2024/common/data"
 	"slices"
 	"strings"
+
+	"github.com/stygian91/datastructs-go/bst"
 )
 
 type Dir uint8
@@ -37,17 +39,17 @@ type Guard struct {
 
 type Grid struct {
 	Guard Guard
-	Rows  map[int][]int
-	Cols  map[int][]int
+	Rows  map[int]bst.BST[int, struct{}]
+	Cols  map[int]bst.BST[int, struct{}]
 
 	Width, Height int
 }
 
-func parseGrid(str string) Grid {
+func ParseGrid(str string) Grid {
 	lines := strings.Split(strings.TrimSpace(str), "\n")
 	res := Grid{
-		Rows: map[int][]int{},
-		Cols: map[int][]int{},
+		Rows: make(map[int]bst.BST[int, struct{}]),
+		Cols: make(map[int]bst.BST[int, struct{}]),
 	}
 
 	res.Height = len(lines)
@@ -59,35 +61,37 @@ func parseGrid(str string) Grid {
 			case '^':
 				res.Guard = Guard{Pos: d.Vec2i{X: x, Y: y}, Dir: North}
 			case '#':
-				res.Rows[y] = append(res.Rows[y], x)
-				res.Cols[x] = append(res.Cols[x], y)
+				res.AppendRow(y, x)
+				res.AppendCol(x, y)
 			}
 		}
 	}
 
 	for y := range res.Rows {
-		slices.Sort(res.Rows[y])
+		res.Rows[y] = res.Rows[y].NewBalanced()
 	}
 
 	for x := range res.Cols {
-		slices.Sort(res.Cols[x])
+		res.Cols[x] = res.Cols[x].NewBalanced()
 	}
 
 	return res
 }
 
-func findClosestNorth(grid Grid) int {
+func FindClosestNorth(grid Grid) int {
 	closest := -1
 	x := grid.Guard.Pos.X
+	col, e := grid.Cols[x]
+	if !e {
+		return -1
+	}
 
-	for i := 0; i < len(grid.Cols[x]); i++ {
-		y := grid.Cols[x][i]
-
-		if y >= grid.Guard.Pos.Y {
+	for v := range col.InOrderSeq() {
+		if v.Value >= grid.Guard.Pos.Y {
 			break
 		}
 
-		closest = y
+		closest = v.Value
 	}
 
 	return closest
@@ -96,15 +100,17 @@ func findClosestNorth(grid Grid) int {
 func findClosestSouth(grid Grid) int {
 	closest := -1
 	x := grid.Guard.Pos.X
+	col, e := grid.Cols[x]
+	if !e {
+		return -1
+	}
 
-	for i := len(grid.Cols[x]) - 1; i >= 0; i-- {
-		y := grid.Cols[x][i]
-
-		if y <= grid.Guard.Pos.Y {
+	for v := range col.PostOrderSeq() {
+		if v.Value <= grid.Guard.Pos.Y {
 			break
 		}
 
-		closest = y
+		closest = v.Value
 	}
 
 	return closest
@@ -113,15 +119,17 @@ func findClosestSouth(grid Grid) int {
 func findClosestEast(grid Grid) int {
 	closest := -1
 	y := grid.Guard.Pos.Y
+	row, e := grid.Rows[y]
+	if !e {
+		return -1
+	}
 
-	for i := len(grid.Rows[y]) - 1; i >= 0; i-- {
-		x := grid.Rows[y][i]
-
-		if x <= grid.Guard.Pos.X {
+	for v := range row.PostOrderSeq() {
+		if v.Value <= grid.Guard.Pos.X {
 			break
 		}
 
-		closest = x
+		closest = v.Value
 	}
 
 	return closest
@@ -130,15 +138,17 @@ func findClosestEast(grid Grid) int {
 func findClosestWest(grid Grid) int {
 	closest := -1
 	y := grid.Guard.Pos.Y
+	row, e := grid.Rows[y]
+	if !e {
+		return -1
+	}
 
-	for i := 0; i < len(grid.Rows[y]); i++ {
-		x := grid.Rows[y][i]
-
-		if x >= grid.Guard.Pos.X {
+	for v := range row.InOrderSeq() {
+		if v.Value >= grid.Guard.Pos.X {
 			break
 		}
 
-		closest = x
+		closest = v.Value
 	}
 
 	return closest
@@ -162,7 +172,7 @@ func getNextDirection(dir Dir) Dir {
 func getNextPos(grid Grid) (d.Vec2i, bool) {
 	switch grid.Guard.Dir {
 	case North:
-		y := findClosestNorth(grid)
+		y := FindClosestNorth(grid)
 		if y == -1 {
 			return d.Vec2i{}, false
 		}
@@ -191,10 +201,10 @@ func getNextPos(grid Grid) (d.Vec2i, bool) {
 }
 
 func countUnique(lines []Line) int {
-	type empty struct {}
+	type empty struct{}
 	visited := map[d.Vec2i]empty{}
 
-	walkH := func (line Line) {
+	walkH := func(line Line) {
 		var start, end int
 		if line.Start.X < line.End.X {
 			start = line.Start.X
@@ -205,12 +215,12 @@ func countUnique(lines []Line) int {
 		}
 
 		for i := start; i <= end; i++ {
-			idx := d.Vec2i{ X: i, Y: line.Start.Y }
+			idx := d.Vec2i{X: i, Y: line.Start.Y}
 			visited[idx] = empty{}
 		}
 	}
 
-	walkV := func (line Line) {
+	walkV := func(line Line) {
 		var start, end int
 		if line.Start.Y < line.End.Y {
 			start = line.Start.Y
@@ -221,7 +231,7 @@ func countUnique(lines []Line) int {
 		}
 
 		for i := start; i <= end; i++ {
-			idx := d.Vec2i{ Y: i, X: line.Start.X }
+			idx := d.Vec2i{Y: i, X: line.Start.X}
 			visited[idx] = empty{}
 		}
 	}
@@ -239,8 +249,94 @@ func countUnique(lines []Line) int {
 
 type Line struct {
 	Start, End d.Vec2i
+
+	Dir Dir
 }
 
 func (this Line) IsHorizontal() bool {
 	return this.Start.Y == this.End.Y
+}
+
+func IsInfinite(grid Grid) bool {
+	lines := []Line{}
+
+	update := func(pos d.Vec2i) {
+		lines = append(lines, Line{
+			Start: grid.Guard.Pos,
+			End:   pos,
+			Dir:   grid.Guard.Dir,
+		})
+		grid.Guard.Pos = pos
+		grid.Guard.Dir = getNextDirection(grid.Guard.Dir)
+	}
+
+	for {
+		pos, inside := getNextPos(grid)
+		if !inside {
+			return false
+		}
+
+		sIdx := IsVisited(lines, pos)
+		if sIdx != -1 && (lines[sIdx].Dir == getNextDirection(grid.Guard.Dir)) {
+			return true
+		}
+
+		update(pos)
+	}
+}
+
+func IsVisited(lines []Line, pos d.Vec2i) int {
+	return slices.IndexFunc(lines, func(line Line) bool {
+		return line.Start == pos
+	})
+}
+
+func CloneGrid(grid Grid) Grid {
+	res := Grid{}
+
+	clone := func(mapOfInts map[int]bst.BST[int, struct{}]) map[int]bst.BST[int, struct{}] {
+		mapRes := map[int]bst.BST[int, struct{}]{}
+
+		for k := range mapOfInts {
+			mapRes[k] = mapOfInts[k].NewBalanced()
+		}
+
+		return mapRes
+	}
+
+	res.Width = grid.Width
+	res.Height = grid.Height
+	res.Guard = Guard{
+		Pos: d.Vec2i{X: grid.Guard.Pos.X, Y: grid.Guard.Pos.Y},
+		Dir: grid.Guard.Dir,
+	}
+
+	res.Rows = clone(grid.Rows)
+	res.Cols = clone(grid.Cols)
+
+	return res
+}
+
+func (this *Grid) AppendRow(y, x int) {
+	row, e := this.Rows[y]
+	if !e {
+		row = bst.NewBST(x, struct{}{})
+		this.Rows[y] = row
+		return
+	}
+
+	row.Add(x, struct{}{})
+	this.Rows[y] = row
+}
+
+func (this *Grid) AppendCol(x, y int) {
+	col, e := this.Cols[x]
+	if !e {
+		col = bst.NewBST(y, struct{}{})
+		this.Cols[x] = col
+		return
+	}
+
+	col.Add(y, struct{}{})
+	this.Cols[x] = col
 }

@@ -13,7 +13,7 @@ func Part1() {
 		panic(err)
 	}
 
-	grid := parseGrid(content)
+	grid := ParseGrid(content)
 	lines := []Line{}
 
 	for {
