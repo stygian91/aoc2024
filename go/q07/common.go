@@ -66,14 +66,22 @@ func ProcessOperands(operands []int, operations []Operation) int {
 	return res
 }
 
-func GenerateOperationPermutations(count uint) [][]Operation {
-	res := [][]Operation{}
+var perms [][]Operation
 
-	for i := uint(0); i < count; i++ {
-		res = append(res, PermutationFromInt(i, count))
+func GenerateOperationPermutations(count uint) [][]Operation {
+	if perms == nil {
+		perms = [][]Operation{}
 	}
 
-	return res
+	if uint(len(perms)) >= count {
+		return perms[0:count]
+	}
+
+	for i := uint(len(perms)); i < count; i++ {
+		perms = append(perms, PermutationFromInt(i, count))
+	}
+
+	return perms[0:count]
 }
 
 func PermutationFromInt(seed, count uint) []Operation {
