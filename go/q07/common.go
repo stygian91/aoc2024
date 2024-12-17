@@ -1,6 +1,7 @@
 package q07
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -23,6 +24,18 @@ type Mul struct{}
 
 func (this Mul) Calc(a, b int) int { return a * b }
 func (this Mul) String() string    { return "Mul" }
+
+type Concat struct{}
+
+func (this Concat) String() string { return "Concat" }
+func (this Concat) Calc(a, b int) int {
+	v, e := strconv.Atoi(fmt.Sprintf("%d%d", a, b))
+	if e != nil {
+		panic(e)
+	}
+
+	return v
+}
 
 func Parse(str string) ([]Equation, error) {
 	eqs := []Equation{}
@@ -54,49 +67,4 @@ func Parse(str string) ([]Equation, error) {
 	}
 
 	return eqs, nil
-}
-
-func ProcessOperands(operands []int, operations []Operation) int {
-	res := operands[0]
-
-	for i := 1; i < len(operands); i++ {
-		res = operations[i-1].Calc(res, operands[i])
-	}
-
-	return res
-}
-
-var perms [][]Operation
-
-func GenerateOperationPermutations(count uint) [][]Operation {
-	if perms == nil {
-		perms = [][]Operation{}
-	}
-
-	if uint(len(perms)) >= count {
-		return perms[0:count]
-	}
-
-	for i := uint(len(perms)); i < count; i++ {
-		perms = append(perms, PermutationFromInt(i, count))
-	}
-
-	return perms[0:count]
-}
-
-func PermutationFromInt(seed, count uint) []Operation {
-	res := []Operation{}
-	w := seed
-
-	for i := uint(0); i < count; i++ {
-		if w&1 == 0 {
-			res = append(res, Add{})
-		} else {
-			res = append(res, Mul{})
-		}
-
-		w = w >> 1
-	}
-
-	return res
 }

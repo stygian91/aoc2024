@@ -21,17 +21,15 @@ func Part1() {
 	answer := 0
 
 	for _, eq := range eqs {
-		if !hasPossibleCorrect(eq) {
-			continue
+		if hasPossibleCorrectPart1(eq) {
+			answer += eq.Result
 		}
-
-		answer += eq.Result
 	}
 
 	fmt.Printf("Part 1 answer: %d\n", answer)
 }
 
-func hasPossibleCorrect(eq Equation) bool {
+func hasPossibleCorrectPart1(eq Equation) bool {
 	permCount := math.Pow(2, float64(len(eq.Operands)-1))
 	permutations := GenerateOperationPermutations(uint(permCount))
 
@@ -43,4 +41,49 @@ func hasPossibleCorrect(eq Equation) bool {
 	}
 
 	return false
+}
+
+func ProcessOperands(operands []int, operations []Operation) int {
+	res := operands[0]
+
+	for i := 1; i < len(operands); i++ {
+		res = operations[i-1].Calc(res, operands[i])
+	}
+
+	return res
+}
+
+var perms [][]Operation
+
+func GenerateOperationPermutations(count uint) [][]Operation {
+	if perms == nil {
+		perms = [][]Operation{}
+	}
+
+	if uint(len(perms)) >= count {
+		return perms[0:count]
+	}
+
+	for i := uint(len(perms)); i < count; i++ {
+		perms = append(perms, PermutationFromInt(i, count))
+	}
+
+	return perms[0:count]
+}
+
+func PermutationFromInt(seed, count uint) []Operation {
+	res := []Operation{}
+	w := seed
+
+	for i := uint(0); i < count; i++ {
+		if w&1 == 0 {
+			res = append(res, Add{})
+		} else {
+			res = append(res, Mul{})
+		}
+
+		w = w >> 1
+	}
+
+	return res
 }
