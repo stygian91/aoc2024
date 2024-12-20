@@ -3,7 +3,6 @@ package q09
 import (
 	"aoc2024/inputs"
 	"fmt"
-	"slices"
 	s "slices"
 	"strings"
 )
@@ -15,14 +14,15 @@ func Part1() {
 		panic(err)
 	}
 
-	expanded, err := ExpandSpace(strings.TrimSpace(content))
+	blocks, err := ExpandSpace(strings.TrimSpace(content))
 	if err != nil {
 		panic(err)
 	}
 
-	expanded = CompactPart1(expanded)
-	expanded = CleanupBlocks(expanded)
-	checksum := ChecksumPart1(expanded)
+	blocks = CompactPart1(blocks)
+	blocks = CleanupBlocks(blocks)
+	// fmt.Println(SerializeBlocks(blocks))
+	checksum := ChecksumPart1(blocks)
 
 	fmt.Println(checksum)
 }
@@ -38,6 +38,7 @@ func CompactPart1(blocks []Block) []Block {
 	updateIndexes()
 
 	for eIdx != -1 && dIdx != -1 && eIdx < dIdx {
+		// fmt.Println("Before:", res)
 		var nToMove int
 		if res[eIdx].Size()-res[dIdx].Size() >= 0 {
 			nToMove = res[dIdx].Size()
@@ -48,12 +49,14 @@ func CompactPart1(blocks []Block) []Block {
 		newFull := Block{Id: res[dIdx].Id, IsFree: false, Start: res[eIdx].Start, End: res[eIdx].Start + nToMove}
 		res[eIdx].Start += nToMove
 		res[dIdx].End -= nToMove
-		eStart := res[dIdx].End + 1
+		eStart := res[len(res)-1].End
 		newEmpty := Block{IsFree: true, Start: eStart, End: eStart + nToMove}
 
-		res = slices.Concat(res[:eIdx], []Block{newFull}, res[eIdx:], []Block{newEmpty})
-
+		res = s.Concat(res[:eIdx], []Block{newFull}, res[eIdx:], []Block{newEmpty})
+		// fmt.Println("Mid:", res)
 		res = CleanupBlocks(res)
+		// fmt.Println("After:", res)
+		// fmt.Println("------------------------------------------")
 		updateIndexes()
 	}
 
@@ -62,7 +65,6 @@ func CompactPart1(blocks []Block) []Block {
 
 func ChecksumPart1(blocks []Block) int {
 	sum := 0
-
 	for _, b := range blocks {
 		sum += BlockChecksum(b)
 	}
@@ -86,7 +88,6 @@ func BlockChecksum(block Block) int {
 	}
 
 	sum := 0
-
 	for i := block.Start; i < block.End; i++ {
 		sum += i * block.Id
 	}
