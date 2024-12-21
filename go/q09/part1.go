@@ -14,14 +14,13 @@ func Part1() {
 		panic(err)
 	}
 
-	blocks, err := ExpandSpace(strings.TrimSpace(content))
+	blocks, _, err := ExpandSpace(strings.TrimSpace(content))
 	if err != nil {
 		panic(err)
 	}
 
 	blocks = CompactPart1(blocks)
 	blocks = CleanupBlocks(blocks)
-	// fmt.Println(SerializeBlocks(blocks))
 	checksum := ChecksumPart1(blocks)
 
 	fmt.Println(checksum)
@@ -38,7 +37,6 @@ func CompactPart1(blocks []Block) []Block {
 	updateIndexes()
 
 	for eIdx != -1 && dIdx != -1 && eIdx < dIdx {
-		// fmt.Println("Before:", res)
 		var nToMove int
 		if res[eIdx].Size()-res[dIdx].Size() >= 0 {
 			nToMove = res[dIdx].Size()
@@ -53,10 +51,7 @@ func CompactPart1(blocks []Block) []Block {
 		newEmpty := Block{IsFree: true, Start: eStart, End: eStart + nToMove}
 
 		res = s.Concat(res[:eIdx], []Block{newFull}, res[eIdx:], []Block{newEmpty})
-		// fmt.Println("Mid:", res)
 		res = CleanupBlocks(res)
-		// fmt.Println("After:", res)
-		// fmt.Println("------------------------------------------")
 		updateIndexes()
 	}
 

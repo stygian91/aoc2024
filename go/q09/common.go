@@ -25,7 +25,7 @@ func (this Block) String() string {
 	return strings.Repeat(strconv.Itoa(this.Id), this.Size())
 }
 
-func ExpandSpace(str string) ([]Block, error) {
+func ExpandSpace(str string) ([]Block, int, error) {
 	id, cursor := 0, 0
 	blocks := []Block{}
 
@@ -34,7 +34,7 @@ func ExpandSpace(str string) ([]Block, error) {
 
 		if i%2 == 0 {
 			if err != nil {
-				return []Block{}, err
+				return []Block{}, 0, err
 			}
 
 			blocks = append(blocks, Block{
@@ -46,7 +46,7 @@ func ExpandSpace(str string) ([]Block, error) {
 			id++
 		} else {
 			if err != nil {
-				return []Block{}, err
+				return []Block{}, 0, err
 			}
 			blocks = append(blocks, Block{
 				Start:  cursor,
@@ -58,7 +58,7 @@ func ExpandSpace(str string) ([]Block, error) {
 		cursor += cnt
 	}
 
-	return blocks, nil
+	return blocks, id, nil
 }
 
 func CleanupBlocks(blocks []Block) []Block {

@@ -12,7 +12,7 @@ func TestExpandSpace(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	res, err := q09.ExpandSpace(content)
+	res, _, err := q09.ExpandSpace(content)
 	if err != nil {
 		t.Fatal(err)
 	}

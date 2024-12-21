@@ -1,0 +1,76 @@
+package q09
+
+import (
+	"aoc2024/inputs"
+	"fmt"
+	s "slices"
+	"strings"
+)
+
+func Part2() {
+	content, err := inputs.GetInputFile("q09/demo.txt")
+	// content, err := inputs.GetInputFile("q09/main.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	expanded, maxId, err := ExpandSpace(strings.TrimSpace(content))
+	if err != nil {
+		panic(err)
+	}
+
+	expanded = CompactPart2(expanded, maxId)
+	expanded = CleanupBlocks(expanded)
+	checksum := ChecksumPart1(expanded)
+
+	fmt.Println(checksum)
+}
+
+func CompactPart2(blocks []Block, maxId int) []Block {
+	res := blocks
+
+	for i := maxId; i >= 0; i-- {
+		dIdx := s.IndexFunc(res, func(b Block) bool { return b.Id == i })
+		if dIdx == -1 {
+			continue
+		}
+
+		eIdx := findSpaceToTheLeft(res, dIdx)
+		if eIdx == -1 {
+			continue
+		}
+
+		nToMove := res[dIdx].Size()
+		newFull := Block{
+			Id:     i,
+			IsFree: false,
+			Start:  res[eIdx].Start,
+			End:    res[eIdx].Start + nToMove,
+		}
+		res[eIdx].Start += nToMove
+		res[dIdx].End -= nToMove
+		eStart := res[dIdx].End + 1
+		newEmpty := Block{IsFree: true, Start: eStart, End: eStart + nToMove}
+
+		res = s.Concat(res[:eIdx], []Block{newFull}, res[eIdx:], []Block{newEmpty})
+		res = CleanupBlocks(res)
+	}
+
+	return res
+}
+
+func findSpaceToTheLeft(blocks []Block, bIdx int) int {
+	bSize := blocks[bIdx].Size()
+
+	for i, block := range blocks {
+		if i >= bIdx {
+			return -1
+		}
+
+		if block.IsFree && block.Size() >= bSize {
+			return i
+		}
+	}
+
+	return -1
+}
