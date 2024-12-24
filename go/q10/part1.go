@@ -11,61 +11,6 @@ import (
 	"github.com/stygian91/datastructs-go/set"
 )
 
-type Grid struct {
-	Values [][]uint8
-	Heads  []d.Vec2i
-
-	Width, Height int
-}
-
-type Dir uint8
-
-const (
-	North Dir = iota
-	East
-	South
-	West
-)
-
-func (this Grid) Neighbours(pos d.Vec2i) iter.Seq2[d.Vec2i, uint8] {
-	return func(yield func(d.Vec2i, uint8) bool) {
-		for dir := North; dir <= West; dir++ {
-			x, y := -1, -1
-
-			switch dir {
-			case North:
-				if pos.Y > 0 {
-					x = pos.X
-					y = pos.Y - 1
-				}
-			case East:
-				if pos.X < this.Width-1 {
-					x = pos.X + 1
-					y = pos.Y
-				}
-			case South:
-				if pos.Y < this.Height-1 {
-					x = pos.X
-					y = pos.Y + 1
-				}
-			case West:
-				if pos.X > 0 {
-					x = pos.X - 1
-					y = pos.Y
-				}
-			}
-
-			if x == -1 {
-				continue
-			}
-
-			if !yield(d.Vec2i{X: x, Y: y}, this.Values[y][x]) {
-				return
-			}
-		}
-	}
-}
-
 func Part1() {
 	// content, err := inputs.GetInputFile("q10/demo.txt")
 	content, err := inputs.GetInputFile("q10/main.txt")
@@ -78,14 +23,14 @@ func Part1() {
 
 	for _, head := range grid.Heads {
 		s := set.New[d.Vec2i]()
-		score(&grid, head, &s)
+		scorePart1(&grid, head, &s)
 		sum += s.Len()
 	}
 
-	fmt.Println("Part 2 answer:", sum)
+	fmt.Println("Part 1 answer:", sum)
 }
 
-func score(grid *Grid, pos d.Vec2i, s *set.Set[d.Vec2i]) {
+func scorePart1(grid *Grid, pos d.Vec2i, s *set.Set[d.Vec2i]) {
 	value := grid.Values[pos.Y][pos.X]
 	neighbours := filterNeighbours(value, grid.Neighbours(pos))
 	if value == 8 {
@@ -97,7 +42,7 @@ func score(grid *Grid, pos d.Vec2i, s *set.Set[d.Vec2i]) {
 	}
 
 	for nPos := range neighbours {
-		score(grid, nPos, s)
+		scorePart1(grid, nPos, s)
 	}
 }
 
