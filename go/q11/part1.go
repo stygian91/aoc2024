@@ -33,7 +33,9 @@ func process(nums iter.Seq[int]) iter.Seq[int] {
 		for num := range nums {
 			// rule 1
 			if num == 0 {
-				yield(1)
+				if !yield(1) {
+					return
+				}
 				continue
 			}
 
@@ -46,19 +48,25 @@ func process(nums iter.Seq[int]) iter.Seq[int] {
 				if err != nil {
 					panic(err)
 				}
-				yield(n1)
+				if !yield(n1) {
+					return
+				}
 
 				n2, err := strconv.Atoi(numStr[idx:])
 				if err != nil {
 					panic(err)
 				}
-				yield(n2)
+				if !yield(n2) {
+					return
+				}
 
 				continue
 			}
 
 			// rule 3
-			yield(num * 2024)
+			if !yield(num * 2024) {
+				return
+			}
 		}
 	}
 }
