@@ -1,3 +1,5 @@
+using DataStructures
+
 function parseFile(path)
   lines = readlines(path)
   parts = split.(lines, "   ")
@@ -22,4 +24,17 @@ function part1()
   println("Answer: $res")
 end
 
-part1()
+function part2()
+  # path = joinpath(@__DIR__, "demo.txt")
+  path = joinpath(@__DIR__, "main.txt")
+  left, right = parseFile(path)
+  rcnts = counter(right)
+  sum = 0
+  for el in left
+    sum += get(rcnts, el, 0) * el
+  end
+  println("Answer: $sum")
+end
+
+# part1()
+part2()
