@@ -4,7 +4,7 @@ go 1.23.1
 
 require (
 	github.com/spf13/cobra v1.8.1
-	github.com/stygian91/datastructs-go v0.2.0
+	github.com/stygian91/datastructs-go v0.3.1
 )
 
 require (
