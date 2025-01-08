@@ -51,5 +51,5 @@ part1 :: proc() {
 }
 
 main :: proc() {
-  part1()
+	part1()
 }
