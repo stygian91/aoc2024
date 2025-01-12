@@ -1,18 +1,18 @@
 package main
 
+import "../common"
 import "core:fmt"
 import "core:os"
 import "core:slice"
 
-part1 :: proc() {
-	// contents, err := os.read_entire_file_or_err("./demo.txt")
-	contents, err := os.read_entire_file_or_err("./main.txt")
+run :: proc(path: string) {
+	contents, err := os.read_entire_file_or_err(path)
 	if err != nil {
 		fmt.eprintfln("Could not read file: %s", err)
 	}
 
-	lists, parseErr := parse(string(contents))
-	if parseErr == .NumberParseError {
+	lists, parseErr := common.parse(string(contents))
+	if parseErr == common.ParseError.NumberParseError {
 		fmt.eprintfln("Error parsing")
 		return
 	}
@@ -27,4 +27,13 @@ part1 :: proc() {
 	}
 
 	fmt.printfln("Part 1: %d", sum)
+}
+
+main :: proc() {
+	if len(os.args) != 2 {
+		fmt.eprintln("Expected exactly 1 argument: the path of the input file.")
+		return
+	}
+
+	run(os.args[1])
 }

@@ -1,4 +1,4 @@
-package main
+package common
 
 import "core:strconv"
 import "core:strings"
