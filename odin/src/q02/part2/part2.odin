@@ -1,8 +1,9 @@
-package part1
+package part2
 
 import "../common"
 import "core:fmt"
 import "core:os"
+import "core:slice"
 
 run :: proc(path: string) {
 	contents, read_err := os.read_entire_file_or_err(path)
@@ -20,10 +21,23 @@ run :: proc(path: string) {
 
 	cnt := 0
 	for levels in level_lists {
-		if !common.is_unsafe(levels[:]) {cnt += 1}
+		unsafe := common.is_unsafe(levels[:])
+		if unsafe {unsafe = try_removing_one(levels[:])}
+		if !unsafe {cnt += 1}
 	}
 
 	fmt.printfln("Answer: %d", cnt)
+}
+
+try_removing_one :: proc(level: []int) -> bool {
+	for i := 0; i < len(level); i += 1 {
+		spliced := slice.concatenate([][]int{level[0:i], level[i + 1:]})
+		if !common.is_unsafe(spliced) {
+			return false
+		}
+	}
+
+	return true
 }
 
 main :: proc() {
