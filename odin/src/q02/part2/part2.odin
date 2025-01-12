@@ -32,6 +32,7 @@ run :: proc(path: string) {
 try_removing_one :: proc(level: []int) -> bool {
 	for i := 0; i < len(level); i += 1 {
 		spliced := slice.concatenate([][]int{level[0:i], level[i + 1:]})
+		defer delete(spliced)
 		if !common.is_unsafe(spliced) {
 			return false
 		}
