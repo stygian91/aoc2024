@@ -9,17 +9,20 @@ Lists :: struct {
 	right: [dynamic]int,
 }
 
-ParseError :: enum {
-	None,
+NumberParseError :: struct {
+	input: string,
+}
+
+ParseError :: union {
 	NumberParseError,
 }
 
 parse_int_err :: proc(input: string) -> (int, ParseError) {
 	if res, ok := strconv.parse_int(input); ok {
-		return res, .None
+		return res, nil
 	}
 
-	return 0, .NumberParseError
+	return 0, NumberParseError{input}
 }
 
 parse :: proc(contents: string) -> (lists: Lists, err: ParseError) {
@@ -40,5 +43,5 @@ parse :: proc(contents: string) -> (lists: Lists, err: ParseError) {
 		append(&lists.right, b)
 	}
 
-	return lists, .None
+	return lists, nil
 }

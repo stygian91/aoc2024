@@ -5,6 +5,15 @@ import "core:fmt"
 import "core:os"
 import "core:slice"
 
+count_unique :: proc(list: []int) -> map[int]int {
+	res := make(map[int]int)
+	for el in list {
+		res[el] += 1
+	}
+
+	return res
+}
+
 run :: proc(path: string) {
 	contents, err := os.read_entire_file_or_err(path)
 	if err != nil {
@@ -14,22 +23,22 @@ run :: proc(path: string) {
 	lists, parseErr := common.parse(string(contents))
 	defer delete(lists.left)
 	defer delete(lists.right)
+
 	switch e in parseErr {
 	case common.NumberParseError:
 		fmt.eprintfln("Error while parsing input: %s", e.input)
 		return
 	}
 
-	slice.sort(lists.left[:])
-	slice.sort(lists.right[:])
-
 	sum := 0
-	for i := 0; i < len(lists.left); i += 1 {
-		diff := abs(lists.left[i] - lists.right[i])
-		sum += diff
+	right_counts := count_unique(lists.right[:])
+	defer delete(right_counts)
+
+	for num in lists.left {
+		sum += num * right_counts[num]
 	}
 
-	fmt.printfln("Part 1: %d", sum)
+	fmt.printfln("Part 2: %d", sum)
 }
 
 main :: proc() {
