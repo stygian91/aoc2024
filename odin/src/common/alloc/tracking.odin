@@ -29,5 +29,5 @@ track_leaks_for_proc :: proc(callback: proc()) {
 		mem.tracking_allocator_destroy(&track_alloc)
 	}
 
-  callback()
+	callback()
 }
