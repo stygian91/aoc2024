@@ -3,9 +3,9 @@ package part2
 import cmnalloc "../../common/alloc"
 import cmn "../common"
 import "core:fmt"
+import "core:math/big"
 import "core:os"
 import "core:strconv"
-import "core:math/big"
 
 MAX_INT :: (1 << (size_of(int) * 8 - 1)) - 1
 
@@ -24,39 +24,45 @@ process_file :: proc(path: string) {
 		return
 	}
 
-	sum := 0
+	sum: big.Int
+	big.atoi(&sum, "0")
+	defer big.destroy(&sum)
+
 	for &claw in claws {
 		claw.Prize.x += 10000000000000
 		claw.Prize.y += 10000000000000
-		min_cost := calc_min_cost(claw)
-		if min_cost == MAX_INT {
+		min_cost, ok := calc_min_cost(claw)
+		defer big.destroy(&min_cost)
+
+		if ok == false {
 			continue
 		}
 
-		sum += min_cost
+		big.add(&sum, &sum, &min_cost)
 	}
 
-	fmt.printfln("Answer: %d", sum)
+	sumstr, err := big.itoa(&sum)
+	defer delete(sumstr)
+
+	if err != nil {
+		fmt.printfln("Err: %s", err)
+		return
+	}
+
+	fmt.printfln("Answer: %s", sumstr)
 }
 
 to_big :: proc(a: int) -> big.Int {
-	buf := [20]u8{}
+	buf := [30]u8{}
 
 	str := strconv.itoa(buf[:], a)
-	res : big.Int
+	res: big.Int
 
 	big.int_atoi(&res, str)
 	return res
 }
 
-calc_min_cost :: proc(claw: cmn.Claw) -> int {
-	// b :=
-	// 	(claw.Prize.y * claw.A.x - claw.A.y * claw.Prize.x) /
-	// 	(claw.B.y * claw.A.x - claw.A.y * claw.B.x)
-	// a := (claw.Prize.x - b * claw.B.x) / claw.A.x
-	//
-	// fmt.printfln("a=%d; b=%d", a, b)
-
+calc_min_cost :: proc(claw: cmn.Claw) -> (big.Int, bool) {
 	tx := to_big(claw.Prize.x)
 	ty := to_big(claw.Prize.y)
 	xa := to_big(claw.A.x)
@@ -64,39 +70,75 @@ calc_min_cost :: proc(claw: cmn.Claw) -> int {
 	xb := to_big(claw.B.x)
 	yb := to_big(claw.B.y)
 
-	tyxa, yatx, ybxa, yaxb : big.Int
-	big.int_mul(&tyxa, &ty, &xa)
-	big.int_mul(&yatx, &ya, &tx)
-	big.int_mul(&ybxa, &yb, &xa)
-	big.int_mul(&yaxb, &ya, &xb)
+	tyxa, yatx, ybxa, yaxb: big.Int
+	big.mul(&tyxa, &ty, &xa)
+	big.mul(&yatx, &ya, &tx)
+	big.mul(&ybxa, &yb, &xa)
+	big.mul(&yaxb, &ya, &xb)
 
-	btop, bbottom : big.Int
-	big.int_sub(&btop, &tyxa, &yatx)
-	big.int_sub(&bbottom, &ybxa, &yaxb)
+	btop, bbottom: big.Int
+	big.sub(&btop, &tyxa, &yatx)
+	big.sub(&bbottom, &ybxa, &yaxb)
 
-	b : big.Int
-	big.int_div(&b, &btop, &bbottom)
+	b: big.Int
+	big.div(&b, &btop, &bbottom)
 
-	a, atop, bxb : big.Int
-	big.int_mul(&bxb, &b, &xb)
-	big.int_sub(&atop, &tx, &bxb)
-	big.int_div(&a, &atop, &xa)
+	a, atop, bxb: big.Int
+	big.mul(&bxb, &b, &xb)
+	big.sub(&atop, &tx, &bxb)
+	big.div(&a, &atop, &xa)
 
-	astr, aerr := big.int_to_string(&a)
-	bstr, berr := big.int_to_string(&b)
+	defer big.destroy(
+		&tx,
+		&ty,
+		&xa,
+		&ya,
+		&xb,
+		&yb,
+		&tyxa,
+		&yatx,
+		&ybxa,
+		&yaxb,
+		&btop,
+		&bbottom,
+		&b,
+		&a,
+		&atop,
+		&bxb,
+	)
 
-	if aerr != nil || berr != nil {
-		return MAX_INT
+	actualX1, actualX2, actualY1, actualY2: big.Int
+	defer big.destroy(&actualX1, &actualX2, &actualY1, &actualY2)
+
+	// actualX = a*xa + b*xb
+	big.mul(&actualX1, &a, &xa)
+	big.mul(&actualX2, &b, &xb)
+	big.add(&actualX1, &actualX1, &actualX2)
+
+	// actualY = a*ya + b*yb
+	big.mul(&actualY1, &a, &ya)
+	big.mul(&actualY2, &b, &yb)
+	big.add(&actualY1, &actualY1, &actualY2)
+
+	prizex := to_big(claw.Prize.x)
+	prizey := to_big(claw.Prize.y)
+	defer big.destroy(&prizex, &prizey)
+
+	xeq, xeqerr := big.eq(&prizex, &actualX1)
+	yeq, yeqerr := big.eq(&prizey, &actualY1)
+	if xeqerr != nil || yeqerr != nil || !xeq || !yeq {
+		return big.Int{}, false
 	}
 
-	aint := strconv.atoi(astr)
-	bint := strconv.atoi(bstr)
-
-	return calc_cost(aint, bint)
+	return calc_cost(&a, &b), true
 }
 
-calc_cost :: proc(a_count, b_count: int) -> int {
-	return a_count * 3 + b_count
+calc_cost :: proc(a_count, b_count: ^big.Int) -> big.Int {
+	a3, res: big.Int
+	defer big.destroy(&a3)
+	big.mul(&a3, a_count, 3)
+	big.add(&res, &a3, b_count)
+	return res
 }
 
 run :: proc() {
