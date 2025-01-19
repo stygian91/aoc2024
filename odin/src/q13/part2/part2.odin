@@ -4,12 +4,19 @@ import cmnalloc "../../common/alloc"
 import cmn "../common"
 import "core:fmt"
 import "core:math/big"
+import "core:mem"
 import "core:os"
 import "core:strconv"
+import "core:time"
 
 MAX_INT :: (1 << (size_of(int) * 8 - 1)) - 1
 
 process_file :: proc(path: string) {
+	defer free_all(context.temp_allocator)
+
+	sw: time.Stopwatch
+	time.stopwatch_start(&sw)
+
 	contents, read_err := os.read_entire_file_or_err(path)
 	defer delete(contents)
 	if read_err != nil {
@@ -32,7 +39,6 @@ process_file :: proc(path: string) {
 		claw.Prize.x += 10000000000000
 		claw.Prize.y += 10000000000000
 		min_cost, ok := calc_min_cost(claw)
-		defer big.destroy(&min_cost)
 
 		if ok == false {
 			continue
@@ -49,95 +55,71 @@ process_file :: proc(path: string) {
 		return
 	}
 
+	time.stopwatch_stop(&sw)
+	duration := time.stopwatch_duration(sw)
+
 	fmt.printfln("Answer: %s", sumstr)
+	fmt.printfln("Duration: %f us", time.duration_microseconds(duration))
 }
 
-to_big :: proc(a: int) -> big.Int {
-	buf := [30]u8{}
-
-	str := strconv.itoa(buf[:], a)
+to_big :: proc(a: int, allocator: mem.Allocator) -> big.Int {
 	res: big.Int
-
-	big.int_atoi(&res, str)
+	big.int_add_digit(&res, &res, cast(big.DIGIT)a, allocator)
 	return res
 }
 
-calc_min_cost :: proc(claw: cmn.Claw) -> (big.Int, bool) {
-	tx := to_big(claw.Prize.x)
-	ty := to_big(claw.Prize.y)
-	xa := to_big(claw.A.x)
-	ya := to_big(claw.A.y)
-	xb := to_big(claw.B.x)
-	yb := to_big(claw.B.y)
+calc_min_cost :: proc(claw: cmn.Claw, allocator := context.temp_allocator) -> (big.Int, bool) {
+	tx := to_big(claw.Prize.x, allocator)
+	ty := to_big(claw.Prize.y, allocator)
+	xa := to_big(claw.A.x, allocator)
+	ya := to_big(claw.A.y, allocator)
+	xb := to_big(claw.B.x, allocator)
+	yb := to_big(claw.B.y, allocator)
 
 	tyxa, yatx, ybxa, yaxb: big.Int
-	big.mul(&tyxa, &ty, &xa)
-	big.mul(&yatx, &ya, &tx)
-	big.mul(&ybxa, &yb, &xa)
-	big.mul(&yaxb, &ya, &xb)
+	big.mul(&tyxa, &ty, &xa, allocator)
+	big.mul(&yatx, &ya, &tx, allocator)
+	big.mul(&ybxa, &yb, &xa, allocator)
+	big.mul(&yaxb, &ya, &xb, allocator)
 
 	btop, bbottom: big.Int
-	big.sub(&btop, &tyxa, &yatx)
-	big.sub(&bbottom, &ybxa, &yaxb)
+	big.sub(&btop, &tyxa, &yatx, allocator)
+	big.sub(&bbottom, &ybxa, &yaxb, allocator)
 
 	b: big.Int
-	big.div(&b, &btop, &bbottom)
+	big.div(&b, &btop, &bbottom, allocator)
 
 	a, atop, bxb: big.Int
-	big.mul(&bxb, &b, &xb)
-	big.sub(&atop, &tx, &bxb)
-	big.div(&a, &atop, &xa)
-
-	defer big.destroy(
-		&tx,
-		&ty,
-		&xa,
-		&ya,
-		&xb,
-		&yb,
-		&tyxa,
-		&yatx,
-		&ybxa,
-		&yaxb,
-		&btop,
-		&bbottom,
-		&b,
-		&a,
-		&atop,
-		&bxb,
-	)
+	big.mul(&bxb, &b, &xb, allocator)
+	big.sub(&atop, &tx, &bxb, allocator)
+	big.div(&a, &atop, &xa, allocator)
 
 	actualX1, actualX2, actualY1, actualY2: big.Int
-	defer big.destroy(&actualX1, &actualX2, &actualY1, &actualY2)
 
-	// actualX = a*xa + b*xb
-	big.mul(&actualX1, &a, &xa)
-	big.mul(&actualX2, &b, &xb)
-	big.add(&actualX1, &actualX1, &actualX2)
+	big.mul(&actualX1, &a, &xa, allocator)
+	big.mul(&actualX2, &b, &xb, allocator)
+	big.add(&actualX1, &actualX1, &actualX2, allocator)
 
-	// actualY = a*ya + b*yb
-	big.mul(&actualY1, &a, &ya)
-	big.mul(&actualY2, &b, &yb)
-	big.add(&actualY1, &actualY1, &actualY2)
+	big.mul(&actualY1, &a, &ya, allocator)
+	big.mul(&actualY2, &b, &yb, allocator)
+	big.add(&actualY1, &actualY1, &actualY2, allocator)
 
-	prizex := to_big(claw.Prize.x)
-	prizey := to_big(claw.Prize.y)
-	defer big.destroy(&prizex, &prizey)
+	prizex := to_big(claw.Prize.x, allocator)
+	prizey := to_big(claw.Prize.y, allocator)
 
-	xeq, xeqerr := big.eq(&prizex, &actualX1)
-	yeq, yeqerr := big.eq(&prizey, &actualY1)
+	xeq, xeqerr := big.eq(&prizex, &actualX1, allocator)
+	yeq, yeqerr := big.eq(&prizey, &actualY1, allocator)
 	if xeqerr != nil || yeqerr != nil || !xeq || !yeq {
 		return big.Int{}, false
 	}
 
-	return calc_cost(&a, &b), true
+	return calc_cost(&a, &b, allocator), true
 }
 
-calc_cost :: proc(a_count, b_count: ^big.Int) -> big.Int {
+calc_cost :: proc(a_count, b_count: ^big.Int, allocator: mem.Allocator) -> big.Int {
 	a3, res: big.Int
-	defer big.destroy(&a3)
-	big.mul(&a3, a_count, 3)
-	big.add(&res, &a3, b_count)
+	big.mul(&a3, a_count, 3, allocator)
+	big.add(&res, &a3, b_count, allocator)
 	return res
 }
 
