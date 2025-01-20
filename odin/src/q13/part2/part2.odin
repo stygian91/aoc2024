@@ -64,7 +64,8 @@ process_file :: proc(path: string) {
 
 to_big :: proc(a: int, allocator: mem.Allocator) -> big.Int {
 	res: big.Int
-	big.int_add_digit(&res, &res, cast(big.DIGIT)a, allocator)
+	// big.int_add_digit(&res, &res, cast(big.DIGIT)a, allocator)
+	big.int_set_from_integer(&res, a, allocator = allocator)
 	return res
 }
 
